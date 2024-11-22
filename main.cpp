@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     plr.y = 1920 / 4;
 
     int speed = 300;
-    int pvel = 0;
+    float pvel = 0;
 
 
     // game loop
@@ -54,10 +54,12 @@ int main(int argc, char *argv[])
                         default:
                             break;
                     }
+                    break;
                 case SDL_KEYUP:
                     case SDL_SCANCODE_SPACE:
                         spacing = false;
                         break;
+                    break;
             }
         }
         if (spacing && plr.y == 1920 / 4) {
@@ -67,7 +69,7 @@ int main(int argc, char *argv[])
             spaced = false;
             pvel = 10;
         }
-        pvel--;
+        pvel -= 0.4;
         plr.y -= pvel;
         plr.y = __min(plr.y, 1920 / 4);
         SDL_RenderClear(rend);
