@@ -1,4 +1,7 @@
 {
     "makefile.makefilePath": "C:\\Users\\leona\\OneDrive\\Desktop\\SDL2\\MAKEFILE",
-    "makefile.makePath": "\\msys\\mingw64\\bin\\mingw32-make.exe"
+    "makefile.makePath": "\\msys\\mingw64\\bin\\mingw32-make.exe",
+    "files.associations": {
+        "iostream": "cpp"
+    }
 }
