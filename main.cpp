@@ -1,28 +1,43 @@
 #include <SDL2/SDL.h>
 #include <iostream>
+#include <algorithm>
 #include <list>
+#include <bits/stdc++.h>
+using std::list;
+using std::cout;
 
-int renderCheese(std::list<int> &cheeses);
+#define WIDTH 1920 / 2
+#define HEIGHT 1080 / 2
+
+#define SPEED 10
+
+int renderCheese(SDL_Renderer* rend, SDL_Texture* tex, list<int> &cheeses, int distanceRan);
+int renderBullet(SDL_Renderer* rend, SDL_Texture* tex, list<int> &bullets, int distanceRan);
 
 int main(int argc, char *argv[])
 {
  
+    list<int> cheeses {}; 
+    list<int> bullets {}; 
+
+    srand(time(NULL));
+
     // if error
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-        std::cout << "error initializing SDL: " << SDL_GetError() << '\n';
+        cout << "error initializing SDL: " << SDL_GetError() << '\n';
     }
 
     // make window
-    SDL_Window* win = SDL_CreateWindow("Most Montery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1920 / 2, 1080 / 2, 0);
+    SDL_Window* win = SDL_CreateWindow("Most Monterey", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
 
     // make renderer
     SDL_Renderer* rend = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
 
 
     // read image
-    SDL_Surface* moeImg = SDL_LoadBMP("./moe.bmp");
-    SDL_Surface* cheeseImg = SDL_LoadBMP("./cheese.bmp");
-    SDL_Surface* bulletImg = SDL_LoadBMP("./bullet.bmp");
+    SDL_Surface* moeImg = SDL_LoadBMP("./sprites/moe.bmp");
+    SDL_Surface* cheeseImg = SDL_LoadBMP("./sprites/cheese.bmp");
+    SDL_Surface* bulletImg = SDL_LoadBMP("./sprites/piperbullet.bmp");
 
 
     // turn it into a texture
@@ -37,27 +52,16 @@ int main(int argc, char *argv[])
     moe.h *= 6;
 
     moe.x = 50;
-    moe.y = 1080 / 4;
+    moe.y = HEIGHT / 2;
 
-    int speed = 300;
     int distanceRan = 0;
     float pvel = 0;
 
-    // setup obstacles and rewards
-    SDL_Rect cheese;
-    SDL_QueryTexture(cheeseTexture, NULL, NULL, &cheese.w, &cheese.h);
-    cheese.w *= 6;
-    cheese.h *= 6;
-
-    SDL_Rect bullet;
-    SDL_QueryTexture(bulletTexture, NULL, NULL, &bullet.w, &bullet.h);
-    bullet.w *= 6;
-    bullet.h *= 6;
 
     // game loop
     bool running = true;
     bool spacing = false;
-    std::cout << "game started omg";
+    cout << "game started omg" << '\n';
     while (running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -81,26 +85,54 @@ int main(int argc, char *argv[])
                     break;
             }
         }
-        if (spacing && moe.y == 1080 / 4) {
+        if (spacing && moe.y == HEIGHT / 2) {
             pvel = 10;
         }
-        pvel -= 0.4;
+        if (moe.y == HEIGHT / 2) {
+            moe.x = 50 + (SDL_sin(distanceRan / SPEED / 5) * 5);
+        } else {
+            moe.x = 50;
+        }
+        if (spacing) {
+            pvel -= 0.4;
+        } else {
+            pvel -= 1;
+        }
         moe.y -= pvel;
-        moe.y = __min(moe.y, 1080 / 4);
-        distanceRan++;
+        moe.y = __min(moe.y, HEIGHT / 2);
+        distanceRan += SPEED;
 
+        if ((distanceRan / SPEED) % 50 == 0) {
+            if ((rand() % 2) + 1 == 1) {
+                cheeses.push_back(distanceRan + (WIDTH));
+                cout << "new cheese" << '\n';
+            } else {
+                bullets.push_back(distanceRan * 1.2 + (WIDTH));
+                cout << "new bullet" << '\n';
+            }
+        }
         SDL_SetRenderDrawColor(rend, 83, 178, 237, 255);
         SDL_RenderClear(rend);
 
         SDL_Rect ground;
         ground.x = 0;
-        ground.y = 1080 / 4 + (16 * 6);
-        ground.w = 1920 / 2;
-        ground.h = 1080 / 4;
+        ground.y = HEIGHT / 2 + (15 * 6);
+        ground.w = WIDTH;
+        ground.h = HEIGHT / 2;
+        SDL_SetRenderDrawColor(rend, 0, 0, 0, 255 );
+        SDL_RenderFillRect(rend, &ground);
+
+        ground.x = 0;
+        ground.y = HEIGHT / 2 + (16 * 6);
+        ground.w = WIDTH;
+        ground.h = HEIGHT / 2;
         SDL_SetRenderDrawColor(rend, 44, 199, 54, 255 );
         SDL_RenderFillRect(rend, &ground);
 
+
         SDL_RenderCopy(rend, moeTexture, NULL, &moe);
+        renderCheese(rend, cheeseTexture, cheeses, distanceRan);
+        renderBullet(rend, bulletTexture, bullets, distanceRan);
         SDL_RenderPresent(rend);
         SDL_Delay(1000 / 60);
     }
@@ -111,6 +143,27 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int renderCheese(std::list<int> &cheeses) {
+int renderCheese(SDL_Renderer* rend, SDL_Texture* tex, list<int> &cheeses, int distanceRan) {
+    SDL_Rect cheese;
+    SDL_QueryTexture(tex, NULL, NULL, &cheese.w, &cheese.h);
+    cheese.w *= 6;
+    cheese.h *= 6;
+    for (int x : cheeses) {
+        cheese.y = HEIGHT / 2  + (SDL_sin((x - distanceRan) / SPEED / 10) * 10);
+        cheese.x = x - distanceRan;
+        SDL_RenderCopy(rend, tex, NULL, &cheese);
+    }
+    return 0;
+}
+int renderBullet(SDL_Renderer* rend, SDL_Texture* tex, list<int> &bullets, int distanceRan) {
+    SDL_Rect bullet;
+    SDL_QueryTexture(tex, NULL, NULL, &bullet.w, &bullet.h);
+    bullet.w *= 6;
+    bullet.h *= 6;
+    for (int x : bullets) {
+        bullet.y = HEIGHT / 2  + (SDL_sin((x - distanceRan) / SPEED) * 4);
+        bullet.x = x - distanceRan * 1.2 + (SDL_sin(((x - distanceRan) * 1.14159265) / SPEED) * 2);
+        SDL_RenderCopy(rend, tex, NULL, &bullet);
+    }
     return 0;
 }
