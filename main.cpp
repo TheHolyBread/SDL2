@@ -61,6 +61,8 @@ int main(int argc, char *argv[])
     // game loop
     bool running = true;
     bool spacing = false;
+    bool canSpace = true;
+
     cout << "game started omg" << '\n';
     while (running) {
         SDL_Event event;
@@ -72,6 +74,10 @@ int main(int argc, char *argv[])
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.scancode) {
                         case SDL_SCANCODE_SPACE:
+                            if (event.key.repeat) {
+                                if (moe.y > HEIGHT / 2 - 10) spacing = false;
+                                break;
+                            }
                             spacing = true;
                             break;
                         default:
@@ -96,7 +102,7 @@ int main(int argc, char *argv[])
         if (spacing) {
             pvel -= 0.4;
         } else {
-            pvel -= 1;
+            pvel -= 2;
         }
         moe.y -= pvel;
         moe.y = __min(moe.y, HEIGHT / 2);
