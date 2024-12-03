@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
                 case SDL_KEYUP:
                     case SDL_SCANCODE_SPACE:
                         spacing = false;
+                        pvel = -5;
                         break;
                     break;
             }
@@ -106,6 +107,12 @@ int main(int argc, char *argv[])
         }
         moe.y -= pvel;
         moe.y = __min(moe.y, HEIGHT / 2);
+        for (int x : bullets) {
+            if (x > moe.x + 96 && x < moe.x) {
+                cout << "die" << '\n';
+                //running = false;
+            }
+        }
         distanceRan += SPEED;
 
         if ((distanceRan / SPEED) % 50 == 0) {
