@@ -18,7 +18,9 @@ int main(int argc, char *argv[])
 {
  
     list<int> cheeses {}; 
-    list<int> bullets {}; 
+    list<int> bullets {};
+    
+    int score { 0 };
 
     srand(time(NULL));
 
@@ -108,9 +110,22 @@ int main(int argc, char *argv[])
         moe.y -= pvel;
         moe.y = __min(moe.y, HEIGHT / 2);
         for (int x : bullets) {
-            if (x > moe.x + 96 && x < moe.x) {
+            if (x - distanceRan * 1.2 < moe.x + 96 && x - distanceRan * 1.2 > moe.x && moe.y > HEIGHT / 2 - 96) {
                 cout << "die" << '\n';
-                //running = false;
+                running = false;
+            }
+        }
+        for (int x : cheeses) {
+            if (x - distanceRan < moe.x + 96 && x - distanceRan > moe.x && moe.y > HEIGHT / 2 - 96) {
+                cout << "cheese" << '\n';
+                list<int> temp {};
+                for (int i : cheeses) {
+                    if (i != x) {
+                        temp.push_back(i);
+                    }
+                }
+                cheeses = temp;
+                score++;
             }
         }
         distanceRan += SPEED;
