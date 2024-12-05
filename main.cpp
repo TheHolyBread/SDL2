@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <iostream>
 #include <algorithm>
 #include <list>
@@ -17,7 +18,7 @@ int renderBullet(SDL_Renderer* rend, SDL_Texture* tex, list<int> &bullets, int d
 int main(int argc, char *argv[])
 {
  
-    list<int> cheeses {}; 
+    list<int> cheeses {};
     list<int> bullets {};
     
     int score { 0 };
@@ -35,6 +36,10 @@ int main(int argc, char *argv[])
     // make renderer
     SDL_Renderer* rend = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
 
+    TTF_Font* font = TTF_OpenFont("./fonts/Tiny5-Regular.ttf", 128);
+    SDL_Surface scoredisp;
+    SDL_Texture* textture;
+    SDL_Rect scorebox;
 
     // read image
     SDL_Surface* moeImg = SDL_LoadBMP("./sprites/moe.bmp");
@@ -110,7 +115,7 @@ int main(int argc, char *argv[])
         moe.y -= pvel;
         moe.y = __min(moe.y, HEIGHT / 2);
         for (int x : bullets) {
-            if (x - distanceRan * 1.2 < moe.x + 96 && x - distanceRan * 1.2 > moe.x && moe.y > HEIGHT / 2 - 96) {
+            if (x - distanceRan * 1.2 < moe.x + 96 && x - distanceRan * 1.2 + 48 > moe.x && moe.y > HEIGHT / 2 - 48) {
                 cout << "die" << '\n';
                 running = false;
             }
@@ -158,9 +163,17 @@ int main(int argc, char *argv[])
         SDL_RenderFillRect(rend, &ground);
 
 
+        scoredisp = *TTF_RenderText_Solid(font, "score", SDL_Color({0,0,0}));
+        textture = SDL_CreateTextureFromSurface(rend, &scoredisp);
+        scorebox.x = 0;
+        scorebox.y = 0;
+        scorebox.w = scoredisp.w;
+        scorebox.h = scoredisp.h;
+
         SDL_RenderCopy(rend, moeTexture, NULL, &moe);
         renderCheese(rend, cheeseTexture, cheeses, distanceRan);
         renderBullet(rend, bulletTexture, bullets, distanceRan);
+        //SDL_RenderCopy(rend, textture, NULL, &scorebox);
         SDL_RenderPresent(rend);
         SDL_Delay(1000 / 60);
     }
