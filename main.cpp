@@ -23,11 +23,16 @@ int main(int argc, char *argv[])
     
     int score { 0 };
 
+    double scorey { 0 };
+
     srand(time(NULL));
 
     // if error
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         cout << "error initializing SDL: " << SDL_GetError() << '\n';
+    }
+    if (TTF_Init() != 0) {
+        cout << "error initializing SDL TTF Renderer: " << SDL_GetError() << '\n';
     }
 
     // make window
@@ -36,8 +41,8 @@ int main(int argc, char *argv[])
     // make renderer
     SDL_Renderer* rend = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
 
-    TTF_Font* font = TTF_OpenFont("./fonts/Tiny5-Regular.ttf", 128);
-    SDL_Surface scoredisp;
+    TTF_Font* font = TTF_OpenFont("./fonts/Tiny5-Regular.ttf", 64);
+    SDL_Surface* scoredisp;
     SDL_Texture* textture;
     SDL_Rect scorebox;
 
@@ -131,6 +136,7 @@ int main(int argc, char *argv[])
                 }
                 cheeses = temp;
                 score++;
+                scorey = 32;
             }
         }
         distanceRan += SPEED;
@@ -162,18 +168,19 @@ int main(int argc, char *argv[])
         SDL_SetRenderDrawColor(rend, 44, 199, 54, 255 );
         SDL_RenderFillRect(rend, &ground);
 
-
-        scoredisp = *TTF_RenderText_Solid(font, "score", SDL_Color({0,0,0}));
-        textture = SDL_CreateTextureFromSurface(rend, &scoredisp);
-        scorebox.x = 0;
-        scorebox.y = 0;
-        scorebox.w = scoredisp.w;
-        scorebox.h = scoredisp.h;
+        SDL_Color black = {(uint8_t)std::round(255 * (scorey/32)),(uint8_t)std::round(255 * (scorey/32)),(uint8_t)std::round(255 * (scorey/32))};
+        scoredisp = TTF_RenderText_Solid(font, std::to_string(score).c_str(), black);
+        textture = SDL_CreateTextureFromSurface(rend, scoredisp);
+        scorey += (0 - scorey) / 20;
+        scorebox.x = 32;
+        scorebox.y = scorey;
+        scorebox.w = scoredisp->w;
+        scorebox.h = scoredisp->h;
 
         SDL_RenderCopy(rend, moeTexture, NULL, &moe);
         renderCheese(rend, cheeseTexture, cheeses, distanceRan);
         renderBullet(rend, bulletTexture, bullets, distanceRan);
-        //SDL_RenderCopy(rend, textture, NULL, &scorebox);
+        SDL_RenderCopy(rend, textture, NULL, &scorebox);
         SDL_RenderPresent(rend);
         SDL_Delay(1000 / 60);
     }
