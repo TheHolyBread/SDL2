@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
     SDL_Renderer* rend = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
 
     TTF_Font* font = TTF_OpenFont("./fonts/Tiny5-Regular.ttf", 64);
+    TTF_Font* comic = TTF_OpenFont("./fonts/pixel-comic-sans.ttf", 128);
     SDL_Surface* scoredisp;
     SDL_Texture* textture;
     SDL_Rect scorebox;
@@ -75,6 +76,8 @@ int main(int argc, char *argv[])
     bool spacing = false;
     bool canSpace = true;
 
+    bool menu = true;
+
     cout << "game started omg" << '\n';
     while (running) {
         SDL_Event event;
@@ -104,83 +107,100 @@ int main(int argc, char *argv[])
                     break;
             }
         }
-        if (spacing && moe.y == HEIGHT / 2) {
-            pvel = 10;
-        }
-        if (moe.y == HEIGHT / 2) {
-            moe.x = 50 + (SDL_sin(distanceRan / SPEED / 5) * 5);
-        } else {
-            moe.x = 50;
-        }
-        if (spacing) {
-            pvel -= 0.4;
-        } else {
-            pvel -= 2;
-        }
-        moe.y -= pvel;
-        moe.y = __min(moe.y, HEIGHT / 2);
-        for (int x : bullets) {
-            if (x - distanceRan * 1.2 < moe.x + 96 && x - distanceRan * 1.2 + 48 > moe.x && moe.y > HEIGHT / 2 - 48) {
-                cout << "die" << '\n';
-                running = false;
-            }
-        }
-        for (int x : cheeses) {
-            if (x - distanceRan < moe.x + 96 && x - distanceRan > moe.x && moe.y > HEIGHT / 2 - 96) {
-                cout << "cheese" << '\n';
-                list<int> temp {};
-                for (int i : cheeses) {
-                    if (i != x) {
-                        temp.push_back(i);
-                    }
-                }
-                cheeses = temp;
-                score++;
-                scorey = 32;
-            }
-        }
-        distanceRan += SPEED;
+        if (menu) {
+            SDL_SetRenderDrawColor(rend, 83, 178, 237, 255);
+            SDL_RenderClear(rend);
 
-        if ((distanceRan / SPEED) % 50 == 0) {
-            if ((rand() % 2) + 1 == 1) {
-                cheeses.push_back(distanceRan + (WIDTH));
-                cout << "new cheese" << '\n';
+            SDL_Color black = {(uint8_t)std::round(255 * (scorey/32)),(uint8_t)std::round(255 * (scorey/32)),(uint8_t)std::round(255 * (scorey/32))};
+            scoredisp = TTF_RenderText_Solid(comic, "Most Monterey", black);
+            textture = SDL_CreateTextureFromSurface(rend, scoredisp);
+            scorey += (0 - scorey) / 20;
+            scorey += (0 - scorey) / 20;
+            scorebox.x = 32;
+            scorebox.y = scorey;
+            scorebox.w = scoredisp->w;
+            scorebox.h = scoredisp->h;
+        } else {
+            if (spacing && moe.y == HEIGHT / 2) {
+                pvel = 10;
+            }
+            if (moe.y == HEIGHT / 2) {
+                moe.x = 50 + (SDL_sin(distanceRan / SPEED / 5) * 5);
             } else {
-                bullets.push_back(distanceRan * 1.2 + (WIDTH));
-                cout << "new bullet" << '\n';
+                moe.x = 50;
             }
+            if (spacing) {
+                pvel -= 0.4;
+            } else {
+                pvel -= 2;
+            }
+            moe.y -= pvel;
+            moe.y = __min(moe.y, HEIGHT / 2);
+            for (int x : bullets) {
+                if (x - distanceRan * 1.2 < moe.x + 96 && x - distanceRan * 1.2 + 48 > moe.x && moe.y > HEIGHT / 2 - 48) {
+                    cout << "die" << '\n';
+                    running = false;
+                }
+            }
+            for (int x : cheeses) {
+                if (x - distanceRan < moe.x + 96 && x - distanceRan > moe.x && moe.y > HEIGHT / 2 - 96) {
+                    cout << "cheese" << '\n';
+                    list<int> temp {};
+                    for (int i : cheeses) {
+                        if (i != x) {
+                            temp.push_back(i);
+                        }
+                    }
+                    cheeses = temp;
+                    score++;
+                    scorey = 32;
+                }
+            }
+            distanceRan += SPEED;
+
+            if ((distanceRan / SPEED) % 50 == 0) {
+                if ((rand() % 2) + 1 == 1) {
+                    cheeses.push_back(distanceRan + (WIDTH));
+                    cout << "new cheese" << '\n';
+                } else {
+                    bullets.push_back(distanceRan * 1.2 + (WIDTH));
+                    cout << "new bullet" << '\n';
+                }
+            }
+            
+            SDL_SetRenderDrawColor(rend, 83, 178, 237, 255);
+            SDL_RenderClear(rend);
+
+            SDL_Rect ground;
+            ground.x = 0;
+            ground.y = HEIGHT / 2 + (15 * 6);
+            ground.w = WIDTH;
+            ground.h = HEIGHT / 2;
+            SDL_SetRenderDrawColor(rend, 0, 0, 0, 255 );
+            SDL_RenderFillRect(rend, &ground);
+
+            ground.x = 0;
+            ground.y = HEIGHT / 2 + (16 * 6);
+            ground.w = WIDTH;
+            ground.h = HEIGHT / 2;
+            SDL_SetRenderDrawColor(rend, 44, 199, 54, 255 );
+            SDL_RenderFillRect(rend, &ground);
+
+            SDL_Color black = {(uint8_t)std::round(255 * (scorey/32)),(uint8_t)std::round(255 * (scorey/32)),(uint8_t)std::round(255 * (scorey/32))};
+            scoredisp = TTF_RenderText_Solid(font, std::to_string(score).c_str(), black);
+            textture = SDL_CreateTextureFromSurface(rend, scoredisp);
+            scorey += (0 - scorey) / 20;
+            scorey += (0 - scorey) / 20;
+            scorebox.x = 32;
+            scorebox.y = scorey;
+            scorebox.w = scoredisp->w;
+            scorebox.h = scoredisp->h;
+
+            SDL_RenderCopy(rend, moeTexture, NULL, &moe);
+            renderCheese(rend, cheeseTexture, cheeses, distanceRan);
+            renderBullet(rend, bulletTexture, bullets, distanceRan);
+            SDL_RenderCopy(rend, textture, NULL, &scorebox);
         }
-        SDL_SetRenderDrawColor(rend, 83, 178, 237, 255);
-        SDL_RenderClear(rend);
-
-        SDL_Rect ground;
-        ground.x = 0;
-        ground.y = HEIGHT / 2 + (15 * 6);
-        ground.w = WIDTH;
-        ground.h = HEIGHT / 2;
-        SDL_SetRenderDrawColor(rend, 0, 0, 0, 255 );
-        SDL_RenderFillRect(rend, &ground);
-
-        ground.x = 0;
-        ground.y = HEIGHT / 2 + (16 * 6);
-        ground.w = WIDTH;
-        ground.h = HEIGHT / 2;
-        SDL_SetRenderDrawColor(rend, 44, 199, 54, 255 );
-        SDL_RenderFillRect(rend, &ground);
-
-        SDL_Color black = {(uint8_t)std::round(255 * (scorey/32)),(uint8_t)std::round(255 * (scorey/32)),(uint8_t)std::round(255 * (scorey/32))};
-        scoredisp = TTF_RenderText_Solid(font, std::to_string(score).c_str(), black);
-        textture = SDL_CreateTextureFromSurface(rend, scoredisp);
-        scorey += (0 - scorey) / 20;
-        scorebox.x = 32;
-        scorebox.y = scorey;
-        scorebox.w = scoredisp->w;
-        scorebox.h = scoredisp->h;
-
-        SDL_RenderCopy(rend, moeTexture, NULL, &moe);
-        renderCheese(rend, cheeseTexture, cheeses, distanceRan);
-        renderBullet(rend, bulletTexture, bullets, distanceRan);
-        SDL_RenderCopy(rend, textture, NULL, &scorebox);
         SDL_RenderPresent(rend);
         SDL_Delay(1000 / 60);
     }
