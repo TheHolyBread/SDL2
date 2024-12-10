@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
     bool canSpace = true;
 
     bool menu = true;
+    int select { 0 };
 
     cout << "game started omg" << '\n';
     while (running) {
@@ -94,6 +95,12 @@ int main(int argc, char *argv[])
                                 break;
                             }
                             spacing = true;
+                            break;
+                        case SDL_SCANCODE_UP:
+                            select++;
+                            break;
+                        case SDL_SCANCODE_DOWN:
+                            select--;
                             break;
                         default:
                             break;
@@ -120,6 +127,7 @@ int main(int argc, char *argv[])
             scorebox.y = scorey;
             scorebox.w = scoredisp->w;
             scorebox.h = scoredisp->h;
+            SDL_RenderCopy(rend, textture, NULL, &scorebox);
         } else {
             if (spacing && moe.y == HEIGHT / 2) {
                 pvel = 10;
