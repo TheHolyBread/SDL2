@@ -20,6 +20,7 @@ using std::cout;
 
 int renderCheese(SDL_Renderer* rend, SDL_Texture* tex, list<int> &cheeses, int distanceRan);
 int renderBullet(SDL_Renderer* rend, SDL_Texture* tex, list<int> &bullets, int distanceRan);
+int get(list<int> &data, int index);
 
 int main(int argc, char *argv[])
 {
@@ -219,9 +220,11 @@ int main(int argc, char *argv[])
                 if ((distanceRan / SPEED) % 50 == 0) {
                     if ((rand() % 2) + 1 == 1) {
                         cheeses.push_back(distanceRan + (WIDTH));
+                        cheeses.push_back((rand() % 2) * 64);
                         cout << "new cheese" << '\n';
                     } else {
                         bullets.push_back(distanceRan * 1.2 + (WIDTH));
+                        bullets.push_back((rand() % 2) * 64);
                         cout << "new bullet" << '\n';
                     }
                 }
@@ -274,7 +277,8 @@ int renderCheese(SDL_Renderer* rend, SDL_Texture* tex, list<int> &cheeses, int d
     SDL_QueryTexture(tex, NULL, NULL, &cheese.w, &cheese.h);
     cheese.w *= 6;
     cheese.h *= 6;
-    for (int x : cheeses) {
+    for (int i = 0; i < sizeof(cheeses); i++) {
+        int x = cheeses[i];
         cheese.y = HEIGHT / 2  + (SDL_sin((x - distanceRan) / SPEED / 10) * 10);
         cheese.x = x - distanceRan;
         SDL_RenderCopy(rend, tex, NULL, &cheese);
@@ -292,4 +296,16 @@ int renderBullet(SDL_Renderer* rend, SDL_Texture* tex, list<int> &bullets, int d
         SDL_RenderCopy(rend, tex, NULL, &bullet);
     }
     return 0;
+}
+
+int get(list<int> &data, int index) {
+    list<int>::iterator i;
+    i = data.begin();
+    int n = 0;
+    for (i = data.begin(); i != data.end(); ++i) {
+        if (n == index) {
+            return *i;
+        }
+        n++;
+    }
 }
