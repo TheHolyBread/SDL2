@@ -225,11 +225,11 @@ int main(int argc, char *argv[])
                 if ((distanceRan / SPEED) % 50 == 0) {
                     if ((rand() % 2) + 1 == 1) {
                         cheeses.push_back(distanceRan + (WIDTH));
-                        cheeses.push_back((rand() % 2) * 64);
+                        //cheeses.push_back((rand() % 2) * 64);
                         cout << "new cheese" << '\n';
                     } else {
                         bullets.push_back(distanceRan * 1.2 + (WIDTH));
-                        bullets.push_back((rand() % 2) * 64);
+                        //bullets.push_back((rand() % 2) * 64);
                         cout << "new bullet" << '\n';
                     }
                 }
@@ -283,7 +283,8 @@ int renderCheese(SDL_Renderer* rend, SDL_Texture* tex, list<int> &cheeses, int d
     cheese.w *= 6;
     cheese.h *= 6;
     for (int i = 0; i < sizeof(cheeses); i++) {
-        int x = cheeses[i];
+        int x = get(cheeses, i);
+        if (x == INT_MIN) continue;
         cheese.y = HEIGHT / 2  + (SDL_sin((x - distanceRan) / SPEED / 10) * 10);
         cheese.x = x - distanceRan;
         SDL_RenderCopy(rend, tex, NULL, &cheese);
@@ -313,4 +314,5 @@ int get(list<int> &data, int index) {
         }
         n++;
     }
+    return INT_MIN;
 }
