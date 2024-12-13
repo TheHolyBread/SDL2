@@ -13,19 +13,17 @@
 using std::list;
 using std::cout;
 
-#define WIDTH 1920 / 2
-#define HEIGHT 1080 / 2
 
 #define SPEED 10
 
-#define WIDTH 1920 / 2
-#define HEIGHT 1080 / 2
-
-#define SPEED 10
+int WIDTH { 1920 / 2 };
+int HEIGHT { 1080 / 2 };
+int SCALE { 6 };
 
 int renderCheese(SDL_Renderer* rend, SDL_Texture* tex, list<int> &cheeses, int distanceRan);
 int renderBullet(SDL_Renderer* rend, SDL_Texture* tex, list<int> &bullets, int distanceRan);
 int get(list<int> &data, int index);
+void updateScale(SDL_Window* win);
 
 int main(int argc, char *argv[])
 {
@@ -40,13 +38,15 @@ int main(int argc, char *argv[])
     }
 
     // make window
-    SDL_Window* win = SDL_CreateWindow("Most Monterey", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
+    SDL_Window* win = SDL_CreateWindow("Most Monterey", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH / 2, HEIGHT / 2, SDL_WINDOW_RESIZABLE);
+    updateScale(win);
+    
 
     // make renderer
     SDL_Renderer* rend = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
 
     TTF_Font* font = TTF_OpenFont("./fonts/Tiny5-Regular.ttf", 64);
-    TTF_Font* comic = TTF_OpenFont("./fonts/pixel-comic-sans.ttf", 96);
+    TTF_Font* titleFont = TTF_OpenFont("./fonts/pixel-comic-sans.ttf", 96);
     SDL_Surface* scoredisp;
     SDL_Texture* textture;
     SDL_Rect scorebox;
@@ -56,6 +56,10 @@ int main(int argc, char *argv[])
     SDL_Surface* cheeseImg = SDL_LoadBMP("./sprites/cheese.bmp");
     SDL_Surface* bulletImg = SDL_LoadBMP("./sprites/piperbullet.bmp");
 
+    SDL_Surface *cursurface = SDL_LoadBMP("./sprites/cheeseCursor.bmp");
+    
+    SDL_Cursor *cursor = SDL_CreateColorCursor(cursurface, 0, 0);
+    SDL_SetCursor(cursor);
 
     // turn it into a texture
     SDL_Texture* moeTexture = SDL_CreateTextureFromSurface(rend, moeImg);
@@ -65,15 +69,16 @@ int main(int argc, char *argv[])
     // setup player rectangle
     SDL_Rect moe;
     SDL_QueryTexture(moeTexture, NULL, NULL, &moe.w, &moe.h);
-    moe.w *= 6;
-    moe.h *= 6;
+    moe.w *= SCALE;
+    moe.h *= SCALE;
 
     moe.x = 50;
     moe.y = HEIGHT / 2;
 
 
-    // game loop
+    // big vars
     bool running { true };
+    bool FULLSCREEN { false };
 
     cout << "game started omg" << '\n';
 
@@ -98,6 +103,11 @@ int main(int argc, char *argv[])
         while (gameloop) {
             bool enter { false };
 
+            updateScale(win);
+            SDL_QueryTexture(moeTexture, NULL, NULL, &moe.w, &moe.h);
+            moe.w *= SCALE;
+            moe.h *= SCALE;
+
             SDL_Event event;
 
             while (SDL_PollEvent(&event)) {
@@ -110,7 +120,7 @@ int main(int argc, char *argv[])
                         switch (event.key.keysym.scancode) {
                             case SDL_SCANCODE_SPACE:
                                 if (event.key.repeat) {
-                                    if (moe.y > HEIGHT / 2 - 10) spacing = false;
+                                    spacing = false;
                                     break;
                                 } else {
                                     enter = true;
@@ -140,17 +150,17 @@ int main(int argc, char *argv[])
                 SDL_SetRenderDrawColor(rend, 83, 178, 237, 255);
                 SDL_RenderClear(rend);
 
-                if (select > 1) {
+                if (select > 2) {
                     select = 0;
                 } else if (select < 0) {
-                    select = 1;
+                    select = 2;
                 }
                 
 
                 SDL_Color black = {0,0,0};
                 SDL_Color white = {255,255,255};
                 SDL_Color yellow = {252, 194, 3};
-                scoredisp = TTF_RenderText_Solid(comic, "Most Monterey", yellow);
+                scoredisp = TTF_RenderText_Solid(titleFont, "Most Monterey", yellow);
                 textture = SDL_CreateTextureFromSurface(rend, scoredisp);
                 SDL_Rect textbox;
                 textbox.x = WIDTH / 2 - scoredisp->w / 2;
@@ -167,7 +177,15 @@ int main(int argc, char *argv[])
                 textbox.h = scoredisp->h;
                 SDL_RenderCopy(rend, textture, NULL, &textbox);
 
-                scoredisp = (select == 1) ? TTF_RenderText_Solid(font, "> Quit <", white) : TTF_RenderText_Solid(font, "Quit", black);
+                scoredisp = (FULLSCREEN) ? ((select == 1) ? TTF_RenderText_Solid(font, "> Unfullscreen <", white) : TTF_RenderText_Solid(font, "Unfullscreen", black)) : ((select == 1) ? TTF_RenderText_Solid(font, "> Fullscreen <", white) : TTF_RenderText_Solid(font, "Fullscreen", black));
+                textture = SDL_CreateTextureFromSurface(rend, scoredisp);
+                textbox.x = WIDTH / 2 - scoredisp->w / 2;
+                textbox.y = textbox.y + textbox.h + 32;
+                textbox.w = scoredisp->w;
+                textbox.h = scoredisp->h;
+                SDL_RenderCopy(rend, textture, NULL, &textbox);
+
+                scoredisp = (select == 2) ? TTF_RenderText_Solid(font, "> Quit <", white) : TTF_RenderText_Solid(font, "Quit", black);
                 textture = SDL_CreateTextureFromSurface(rend, scoredisp);
                 textbox.x = WIDTH / 2 - scoredisp->w / 2;
                 textbox.y = textbox.y + textbox.h + 32;
@@ -181,8 +199,11 @@ int main(int argc, char *argv[])
                             menu = false;
                             spacing = false;
                             break;
-                        
                         case 1:
+                            FULLSCREEN = !FULLSCREEN;
+                            FULLSCREEN ? SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN_DESKTOP) : SDL_SetWindowFullscreen(win, 0);
+                            break;
+                        case 2:
                             running = false;
                             gameloop = false;
                             break;
@@ -201,7 +222,7 @@ int main(int argc, char *argv[])
                 moe.y -= pvel;
                 moe.y = __min(moe.y, HEIGHT / 2);
                 for (int x : bullets) {
-                    if (x - distanceRan * 1.2 < moe.x + 96 && x - distanceRan * 1.2 + 48 > moe.x && moe.y > HEIGHT / 2 - 48) {
+                    if (x - distanceRan * 1.2 < moe.x + moe.w && x - distanceRan * 1.2 + 48 > moe.x && moe.y > HEIGHT / 2 - 48) {
                         cout << "die" << '\n';
                         gameloop = false;
                     }
@@ -239,14 +260,14 @@ int main(int argc, char *argv[])
 
                 SDL_Rect ground;
                 ground.x = 0;
-                ground.y = HEIGHT / 2 + (15 * 6);
+                ground.y = HEIGHT / 2 + (15 * SCALE);
                 ground.w = WIDTH;
                 ground.h = HEIGHT / 2;
                 SDL_SetRenderDrawColor(rend, 0, 0, 0, 255 );
                 SDL_RenderFillRect(rend, &ground);
 
                 ground.x = 0;
-                ground.y = HEIGHT / 2 + (16 * 6);
+                ground.y = HEIGHT / 2 + (16 * SCALE);
                 ground.w = WIDTH;
                 ground.h = HEIGHT / 2;
                 SDL_SetRenderDrawColor(rend, 44, 199, 54, 255 );
@@ -280,8 +301,8 @@ int main(int argc, char *argv[])
 int renderCheese(SDL_Renderer* rend, SDL_Texture* tex, list<int> &cheeses, int distanceRan) {
     SDL_Rect cheese;
     SDL_QueryTexture(tex, NULL, NULL, &cheese.w, &cheese.h);
-    cheese.w *= 6;
-    cheese.h *= 6;
+    cheese.w *= SCALE;
+    cheese.h *= SCALE;
     for (int i = 0; i < sizeof(cheeses); i++) {
         int x = get(cheeses, i);
         if (x == INT_MIN) continue;
@@ -294,8 +315,8 @@ int renderCheese(SDL_Renderer* rend, SDL_Texture* tex, list<int> &cheeses, int d
 int renderBullet(SDL_Renderer* rend, SDL_Texture* tex, list<int> &bullets, int distanceRan) {
     SDL_Rect bullet;
     SDL_QueryTexture(tex, NULL, NULL, &bullet.w, &bullet.h);
-    bullet.w *= 6;
-    bullet.h *= 6;
+    bullet.w *= SCALE;
+    bullet.h *= SCALE;
     for (int x : bullets) {
         bullet.y = HEIGHT / 2  + (SDL_sin((x - distanceRan) / SPEED) * 4);
         bullet.x = x - distanceRan * 1.2 + (SDL_sin(((x - distanceRan) * 1.14159265) / SPEED) * 2);
@@ -315,4 +336,9 @@ int get(list<int> &data, int index) {
         n++;
     }
     return INT_MIN;
+}
+
+void updateScale(SDL_Window* win) {
+    SDL_GetWindowSize(win, &WIDTH, &HEIGHT);
+    SCALE = ((double) WIDTH / (1920.0 / 2)) * 6;
 }
