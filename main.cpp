@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     }
 
     // make window
-    SDL_Window* win = SDL_CreateWindow("Most Monterey", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH / 2, HEIGHT / 2, SDL_WINDOW_RESIZABLE);
+    SDL_Window* win = SDL_CreateWindow("Most Monterey", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_RESIZABLE);
     updateScale(win);
     
 
@@ -75,6 +75,8 @@ int main(int argc, char *argv[])
     moe.x = 50;
     moe.y = HEIGHT / 2;
 
+    int moey = moe.y;
+
 
     // big vars
     bool running { true };
@@ -107,6 +109,8 @@ int main(int argc, char *argv[])
             SDL_QueryTexture(moeTexture, NULL, NULL, &moe.w, &moe.h);
             moe.w *= SCALE;
             moe.h *= SCALE;
+            TTF_SetFontSize(font, (64 / 6) * SCALE);
+            TTF_SetFontSize(titleFont, (96 / 6) * SCALE);
 
             SDL_Event event;
 
@@ -219,7 +223,9 @@ int main(int argc, char *argv[])
                     moe.x = 50;
                 }
                 pvel -= 0.4;
-                moe.y -= pvel;
+                moey += pvel;
+                moey = __max(moey, 0);
+                moe.y = (HEIGHT / 2) - (moey * ((double) SCALE / 6.0));
                 moe.y = __min(moe.y, HEIGHT / 2);
                 for (int x : bullets) {
                     if (x - distanceRan * 1.2 < moe.x + moe.w && x - distanceRan * 1.2 + 48 > moe.x && moe.y > HEIGHT / 2 - 48) {
