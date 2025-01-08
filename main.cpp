@@ -6,19 +6,21 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_mouse.h>
 #include <iostream>
 #include <algorithm>
 #include <list>
 #include <math.h>
 using std::list;
 using std::cout;
+using std::to_string;
 
 
 #define SPEED 10
 
 int WIDTH { 1920 / 2 };
 int HEIGHT { 1080 / 2 };
-int SCALE { 6 };
+double SCALE { 6.0 };
 
 int renderCheese(SDL_Renderer* rend, SDL_Texture* tex, list<int> &cheeses, int distanceRan);
 int renderBullet(SDL_Renderer* rend, SDL_Texture* tex, list<int> &bullets, int distanceRan);
@@ -38,7 +40,7 @@ int main(int argc, char *argv[])
     }
 
     // make window
-    SDL_Window* win = SDL_CreateWindow("Most Monterey", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_RESIZABLE);
+    SDL_Window* win = SDL_CreateWindow("Most Monterey", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
     updateScale(win);
     
 
@@ -59,12 +61,19 @@ int main(int argc, char *argv[])
     SDL_Surface *cursurface = SDL_LoadBMP("./sprites/cheeseCursor.bmp");
     
     SDL_Cursor *cursor = SDL_CreateColorCursor(cursurface, 0, 0);
-    SDL_SetCursor(cursor);
+    int mouseX = 0;
+    int mouseY = 0;
+    SDL_GetGlobalMouseState(&mouseX, &mouseY);
+    //SDL_SetCursor(cursor);
 
     // turn it into a texture
     SDL_Texture* moeTexture = SDL_CreateTextureFromSurface(rend, moeImg);
     SDL_Texture* cheeseTexture = SDL_CreateTextureFromSurface(rend, cheeseImg);
     SDL_Texture* bulletTexture = SDL_CreateTextureFromSurface(rend, bulletImg);
+
+    SDL_Texture* cursorTexture = SDL_CreateTextureFromSurface(rend, cursurface);
+    SDL_Rect mcursor;
+    SDL_QueryTexture(cursorTexture, NULL, NULL, &mcursor.w, &mcursor.h);
 
     // setup player rectangle
     SDL_Rect moe;
@@ -91,6 +100,7 @@ int main(int argc, char *argv[])
         bool canSpace { true };
 
         bool menu { true };
+        bool gameover { false };
         int select { 0 };
 
         int distanceRan { 0 };
@@ -109,8 +119,8 @@ int main(int argc, char *argv[])
             SDL_QueryTexture(moeTexture, NULL, NULL, &moe.w, &moe.h);
             moe.w *= SCALE;
             moe.h *= SCALE;
-            TTF_SetFontSize(font, (64 / 6) * SCALE);
-            TTF_SetFontSize(titleFont, (96 / 6) * SCALE);
+            TTF_SetFontSize(font, 64 * SCALE / 6);
+            TTF_SetFontSize(titleFont, 96 * SCALE / 6);
 
             SDL_Event event;
 
@@ -148,8 +158,13 @@ int main(int argc, char *argv[])
                             spacing = false;
                             break;
                         break;
+                    case SDL_MOUSEMOTION:
+                        SDL_GetGlobalMouseState(&mouseX, &mouseY);
+                        break;
                 }
             }
+            mcursor.x = mouseX; //- SDL_GetWindowPosition();
+            mcursor.y = mouseY;
             if (menu) {
                 SDL_SetRenderDrawColor(rend, 83, 178, 237, 255);
                 SDL_RenderClear(rend);
@@ -213,6 +228,39 @@ int main(int argc, char *argv[])
                             break;
                     }
                 }
+            } else if (gameover) {
+                SDL_SetRenderDrawColor(rend, 83, 178, 237, 255);
+                SDL_RenderClear(rend);
+
+                SDL_Rect ground;
+                ground.x = 0;
+                ground.y = HEIGHT / 2 + (15 * SCALE);
+                ground.w = WIDTH;
+                ground.h = HEIGHT / 2;
+                SDL_SetRenderDrawColor(rend, 0, 0, 0, 255 );
+                SDL_RenderFillRect(rend, &ground);
+
+                ground.x = 0;
+                ground.y = HEIGHT / 2 + (16 * SCALE);
+                ground.w = WIDTH;
+                ground.h = HEIGHT / 2;
+                SDL_SetRenderDrawColor(rend, 44, 199, 54, 255 );
+                SDL_RenderFillRect(rend, &ground);
+
+                SDL_Color white = {255,255,255};
+                SDL_Color yellow = {252, 194, 3};
+                scoredisp = TTF_RenderText_Solid(titleFont, to_string(score).c_str(), yellow);
+                textture = SDL_CreateTextureFromSurface(rend, scoredisp);
+                SDL_Rect textbox;
+                textbox.x = WIDTH / 2 - scoredisp->w / 2;
+                textbox.y = HEIGHT / 2 - scoredisp->h / 2;
+                textbox.w = scoredisp->w;
+                textbox.h = scoredisp->h;
+                SDL_RenderCopy(rend, textture, NULL, &textbox);
+
+                if (enter) {
+                    gameloop = false;
+                }
             } else {
                 if (spacing && moe.y == HEIGHT / 2) {
                     pvel = 10;
@@ -230,7 +278,7 @@ int main(int argc, char *argv[])
                 for (int x : bullets) {
                     if (x - distanceRan * 1.2 < moe.x + moe.w && x - distanceRan * 1.2 + 48 > moe.x && moe.y > HEIGHT / 2 - 48) {
                         cout << "die" << '\n';
-                        gameloop = false;
+                        gameover = true;
                     }
                 }
                 for (int x : cheeses) {
@@ -247,9 +295,9 @@ int main(int argc, char *argv[])
                         scorey = 32;
                     }
                 }
-                distanceRan += SPEED;
+                distanceRan += SPEED * SCALE / 6;
 
-                if ((distanceRan / SPEED) % 50 == 0) {
+                if ((int)(distanceRan / (SPEED * SCALE / 6)) % 50 == 0) {
                     if ((rand() % 2) + 1 == 1) {
                         cheeses.push_back(distanceRan + (WIDTH));
                         //cheeses.push_back((rand() % 2) * 64);
@@ -293,6 +341,7 @@ int main(int argc, char *argv[])
                 renderBullet(rend, bulletTexture, bullets, distanceRan);
                 SDL_RenderCopy(rend, textture, NULL, &scorebox);
             }
+            SDL_RenderCopy(rend, cursorTexture, NULL, &mcursor);
             SDL_RenderPresent(rend);
             SDL_Delay(1000 / 60);
         }
