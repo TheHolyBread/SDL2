@@ -203,8 +203,11 @@ int main(int argc, char *argv[])
                         break;
                 }
             }
-            mcursor.x = mouseX; //- SDL_GetWindowPosition();
-            mcursor.y = mouseY;
+            int winx;
+            int winy;
+            SDL_GetWindowPosition(win, &winx, &winy);
+            mcursor.x = mouseX - winx;
+            mcursor.y = mouseY - winy;
             if (menu) {
                 SDL_SetRenderDrawColor(rend, 83, 178, 237, 255);
                 SDL_RenderClear(rend);
