@@ -4,6 +4,10 @@
 // with console
 // g++ -Isrc/Include -Lsrc/lib -o main main.cpp -lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf
 
+
+
+
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mouse.h>
@@ -11,25 +15,43 @@
 #include <algorithm>
 #include <list>
 #include <math.h>
+#include <chrono>
+#include <cstdint>
 using std::list;
 using std::cout;
 using std::to_string;
 
 
+
 #define SPEED 10
+
+
+
 
 int WIDTH { 1920 / 2 };
 int HEIGHT { 1080 / 2 };
 double SCALE { 6.0 };
 
+
+
+
 int renderCheese(SDL_Renderer* rend, SDL_Texture* tex, list<int> &cheeses, int distanceRan);
 int renderBullet(SDL_Renderer* rend, SDL_Texture* tex, list<int> &bullets, int distanceRan);
 int get(list<int> &data, int index);
 void updateScale(SDL_Window* win);
+uint64_t milliTime();
+
+
+
 
 int main(int argc, char *argv[])
 {
+
+
     srand(time(NULL));
+
+
+
 
     // if error
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -39,19 +61,32 @@ int main(int argc, char *argv[])
         cout << "error initializing SDL TTF Renderer: " << SDL_GetError() << '\n';
     }
 
+
+
+
     // make window
     SDL_Window* win = SDL_CreateWindow("Most Monterey", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
     updateScale(win);
     
 
+
+
     // make renderer
     SDL_Renderer* rend = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
+
+
+
+
 
     TTF_Font* font = TTF_OpenFont("./fonts/Tiny5-Regular.ttf", 64);
     TTF_Font* titleFont = TTF_OpenFont("./fonts/pixel-comic-sans.ttf", 96);
     SDL_Surface* scoredisp;
     SDL_Texture* textture;
     SDL_Rect scorebox;
+
+
+
+
 
     // read image
     SDL_Surface* moeImg = SDL_LoadBMP("./sprites/moe.bmp");
@@ -60,11 +95,13 @@ int main(int argc, char *argv[])
 
     SDL_Surface *cursurface = SDL_LoadBMP("./sprites/cheeseCursor.bmp");
     
+
     SDL_Cursor *cursor = SDL_CreateColorCursor(cursurface, 0, 0);
     int mouseX = 0;
     int mouseY = 0;
     SDL_GetGlobalMouseState(&mouseX, &mouseY);
-    //SDL_SetCursor(cursor);
+
+
 
     // turn it into a texture
     SDL_Texture* moeTexture = SDL_CreateTextureFromSurface(rend, moeImg);
@@ -74,6 +111,9 @@ int main(int argc, char *argv[])
     SDL_Texture* cursorTexture = SDL_CreateTextureFromSurface(rend, cursurface);
     SDL_Rect mcursor;
     SDL_QueryTexture(cursorTexture, NULL, NULL, &mcursor.w, &mcursor.h);
+
+
+
 
     // setup player rectangle
     SDL_Rect moe;
@@ -229,6 +269,9 @@ int main(int argc, char *argv[])
                     }
                 }
             } else if (gameover) {
+                int endScoreX = 16 * sin(milliTime() / 100.0);
+                int endScoreY = 16 * cos(milliTime() / 170.0);
+                int outline = 16.0 * SCALE / 6.0;
                 SDL_SetRenderDrawColor(rend, 83, 178, 237, 255);
                 SDL_RenderClear(rend);
 
@@ -249,13 +292,77 @@ int main(int argc, char *argv[])
 
                 SDL_Color white = {255,255,255};
                 SDL_Color yellow = {252, 194, 3};
-                scoredisp = TTF_RenderText_Solid(titleFont, to_string(score).c_str(), yellow);
+                SDL_Color black = {0, 0, 0};
+
+
+
+
+
+
+                // score text outline
+                scoredisp = TTF_RenderText_Solid(titleFont, to_string(score).c_str(), black);
                 textture = SDL_CreateTextureFromSurface(rend, scoredisp);
                 SDL_Rect textbox;
-                textbox.x = WIDTH / 2 - scoredisp->w / 2;
-                textbox.y = HEIGHT / 2 - scoredisp->h / 2;
+                textbox.x = (WIDTH - outline) / 2 - scoredisp->w / 2 + endScoreX;
+                textbox.y = HEIGHT / 2 - scoredisp->h / 2 + endScoreY;
                 textbox.w = scoredisp->w;
                 textbox.h = scoredisp->h;
+                SDL_RenderCopy(rend, textture, NULL, &textbox);
+
+
+                scoredisp = TTF_RenderText_Solid(titleFont, to_string(score).c_str(), black);
+                textture = SDL_CreateTextureFromSurface(rend, scoredisp);
+                textbox.x = (WIDTH + outline) / 2 - scoredisp->w / 2 + endScoreX;
+                textbox.y = HEIGHT / 2 - scoredisp->h / 2 + endScoreY;
+                textbox.w = scoredisp->w;
+                textbox.h = scoredisp->h;
+                SDL_RenderCopy(rend, textture, NULL, &textbox);
+
+
+                scoredisp = TTF_RenderText_Solid(titleFont, to_string(score).c_str(), black);
+                textture = SDL_CreateTextureFromSurface(rend, scoredisp);
+                textbox.x = WIDTH / 2 - scoredisp->w / 2 + endScoreX;
+                textbox.y = (HEIGHT - outline) / 2 - scoredisp->h / 2 + endScoreY;
+                textbox.w = scoredisp->w;
+                textbox.h = scoredisp->h;
+                SDL_RenderCopy(rend, textture, NULL, &textbox);
+
+
+                scoredisp = TTF_RenderText_Solid(titleFont, to_string(score).c_str(), black);
+                textture = SDL_CreateTextureFromSurface(rend, scoredisp);
+                textbox.x = WIDTH / 2 - scoredisp->w / 2 + endScoreX;
+                textbox.y = (HEIGHT + outline) / 2 - scoredisp->h / 2 + endScoreY;
+                textbox.w = scoredisp->w;
+                textbox.h = scoredisp->h;
+                SDL_RenderCopy(rend, textture, NULL, &textbox);
+
+
+
+
+
+
+
+                // score text fill
+                scoredisp = TTF_RenderText_Solid(titleFont, to_string(score).c_str(), yellow);
+                textture = SDL_CreateTextureFromSurface(rend, scoredisp);
+                textbox.x = WIDTH / 2 - scoredisp->w / 2 + endScoreX;
+                textbox.y = HEIGHT / 2 - scoredisp->h / 2 + endScoreY;
+                textbox.w = scoredisp->w;
+                textbox.h = scoredisp->h;
+                SDL_RenderCopy(rend, textture, NULL, &textbox);
+
+
+
+
+
+
+                // continue message
+                scoredisp = (time(NULL) % 2) ? TTF_RenderText_Solid(font, "> SPACE TO CONTINUE <", white) : TTF_RenderText_Solid(font, "SPACE TO CONTINUE", white);
+                textture = SDL_CreateTextureFromSurface(rend, scoredisp);
+                textbox.x = WIDTH / 2 - scoredisp->w / 2;
+                textbox.w = scoredisp->w;
+                textbox.h = scoredisp->h;
+                textbox.y = HEIGHT - textbox.h - 32;
                 SDL_RenderCopy(rend, textture, NULL, &textbox);
 
                 if (enter) {
@@ -367,6 +474,7 @@ int renderCheese(SDL_Renderer* rend, SDL_Texture* tex, list<int> &cheeses, int d
     }
     return 0;
 }
+
 int renderBullet(SDL_Renderer* rend, SDL_Texture* tex, list<int> &bullets, int distanceRan) {
     SDL_Rect bullet;
     SDL_QueryTexture(tex, NULL, NULL, &bullet.w, &bullet.h);
@@ -396,4 +504,9 @@ int get(list<int> &data, int index) {
 void updateScale(SDL_Window* win) {
     SDL_GetWindowSize(win, &WIDTH, &HEIGHT);
     SCALE = ((double) WIDTH / (1920.0 / 2)) * 6;
+}
+
+uint64_t milliTime() {
+  using namespace std::chrono;
+  return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 }
