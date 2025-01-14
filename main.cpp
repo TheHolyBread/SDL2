@@ -17,6 +17,8 @@
 #include <math.h>
 #include <chrono>
 #include <cstdint>
+
+
 using std::list;
 using std::cout;
 using std::to_string;
@@ -92,26 +94,32 @@ int main(int argc, char *argv[])
     SDL_Surface* moeImg = SDL_LoadBMP("./sprites/moe.bmp");
     SDL_Surface* cheeseImg = SDL_LoadBMP("./sprites/cheese.bmp");
     SDL_Surface* bulletImg = SDL_LoadBMP("./sprites/piperbullet.bmp");
+    SDL_Surface* cloudImg = SDL_LoadBMP("./sprites/cloud.bmp");
 
     SDL_Surface *cursurface = SDL_LoadBMP("./sprites/cheeseCursor.bmp");
     
 
+    // custom cursor
     SDL_Cursor *cursor = SDL_CreateColorCursor(cursurface, 0, 0);
     int mouseX = 0;
     int mouseY = 0;
     SDL_GetGlobalMouseState(&mouseX, &mouseY);
 
+    SDL_Surface *actualMouse = SDL_LoadBMP("./sprites/mouse.bmp");
+    
+    SDL_Cursor *actualCursor = SDL_CreateColorCursor(actualMouse, 0, 0);
+    SDL_SetCursor(actualCursor);
 
 
     // turn it into a texture
     SDL_Texture* moeTexture = SDL_CreateTextureFromSurface(rend, moeImg);
     SDL_Texture* cheeseTexture = SDL_CreateTextureFromSurface(rend, cheeseImg);
     SDL_Texture* bulletTexture = SDL_CreateTextureFromSurface(rend, bulletImg);
+    SDL_Texture* cloudTexture = SDL_CreateTextureFromSurface(rend, cloudImg);
 
     SDL_Texture* cursorTexture = SDL_CreateTextureFromSurface(rend, cursurface);
     SDL_Rect mcursor;
-    SDL_QueryTexture(cursorTexture, NULL, NULL, &mcursor.w, &mcursor.h);
-
+    
 
 
 
@@ -133,8 +141,11 @@ int main(int argc, char *argv[])
 
     cout << "game started omg" << '\n';
 
+    // full app loop
     while (running) {
 
+
+        // reset necessary vars
         bool gameloop { true };
         bool spacing { false };
         bool canSpace { true };
@@ -152,18 +163,30 @@ int main(int argc, char *argv[])
         list<int> cheeses {};
         list<int> bullets {};
 
+
+        // main game loop
         while (gameloop) {
             bool enter { false };
 
+            // scale everything to be responsive
             updateScale(win);
             SDL_QueryTexture(moeTexture, NULL, NULL, &moe.w, &moe.h);
             moe.w *= SCALE;
             moe.h *= SCALE;
+
+            SDL_QueryTexture(cursorTexture, NULL, NULL, &mcursor.w, &mcursor.h);
+            mcursor.w *= SCALE / 3;
+            mcursor.h *= SCALE / 3;
+
             TTF_SetFontSize(font, 64 * SCALE / 6);
             TTF_SetFontSize(titleFont, 96 * SCALE / 6);
 
+
+
+
             SDL_Event event;
 
+            // loop through any pending events/inputs
             while (SDL_PollEvent(&event)) {
                 switch (event.type) {
                     case SDL_QUIT:
@@ -255,6 +278,8 @@ int main(int argc, char *argv[])
                 textbox.h = scoredisp->h;
                 SDL_RenderCopy(rend, textture, NULL, &textbox);
 
+
+                // control menu options
                 if (enter) {
                     switch (select) {
                         case 0:
@@ -386,13 +411,13 @@ int main(int argc, char *argv[])
                 moe.y = (HEIGHT / 2) - (moey * ((double) SCALE / 6.0));
                 moe.y = __min(moe.y, HEIGHT / 2);
                 for (int x : bullets) {
-                    if (x - distanceRan * 1.2 < moe.x + moe.w && x - distanceRan * 1.2 + 48 > moe.x && moe.y > HEIGHT / 2 - 48) {
+                    if (x - distanceRan * 1.2 < moe.x + moe.w && x - distanceRan * 1.2 + (64 * (SCALE / 6)) > moe.x && moe.y > HEIGHT / 2 - (64 * (SCALE / 6))) {
                         cout << "die" << '\n';
                         gameover = true;
                     }
                 }
                 for (int x : cheeses) {
-                    if (x - distanceRan < moe.x + 96 && x - distanceRan > moe.x && moe.y > HEIGHT / 2 - 96) {
+                    if (x - distanceRan < moe.x + (64 * (SCALE / 6)) && x - distanceRan > moe.x && moe.y > HEIGHT / 2 - (64 * (SCALE / 6))) {
                         cout << "cheese" << '\n';
                         list<int> temp {};
                         for (int i : cheeses) {
@@ -491,6 +516,9 @@ int renderBullet(SDL_Renderer* rend, SDL_Texture* tex, list<int> &bullets, int d
     return 0;
 }
 
+// int renderClouds(SDL_Renderer* rend, SDL_Texture* tex, list<list<double>> &clouds, int distanceRan) {
+
+// }
 int get(list<int> &data, int index) {
     list<int>::iterator i;
     i = data.begin();
