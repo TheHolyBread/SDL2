@@ -4,10 +4,6 @@
 // with console
 // g++ -Isrc/Include -Lsrc/lib -o main main.cpp -lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf
 
-
-
-
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mouse.h>
@@ -18,86 +14,61 @@
 #include <chrono>
 #include <cstdint>
 
-
-using std::list;
 using std::cout;
+using std::list;
 using std::to_string;
-
-
 
 #define SPEED 10
 
+int WIDTH{1920 / 2};
+int HEIGHT{1080 / 2};
+double SCALE{6.0};
 
+int renderCheese(SDL_Renderer *rend, SDL_Texture *tex, list<int> &cheeses, int distanceRan);
+int renderBullet(SDL_Renderer *rend, SDL_Texture *tex, list<int> &bullets, int distanceRan);
+int renderClouds(SDL_Renderer *rend, SDL_Texture *tex, list<list<double>> &clouds, int distanceRan);
 
-
-int WIDTH { 1920 / 2 };
-int HEIGHT { 1080 / 2 };
-double SCALE { 6.0 };
-
-
-
-
-int renderCheese(SDL_Renderer* rend, SDL_Texture* tex, list<int> &cheeses, int distanceRan);
-int renderBullet(SDL_Renderer* rend, SDL_Texture* tex, list<int> &bullets, int distanceRan);
 int get(list<int> &data, int index);
-void updateScale(SDL_Window* win);
+double getdbl(list<double> &data, int index);
+
+void updateScale(SDL_Window *win);
 uint64_t milliTime();
-
-
-
 
 int main(int argc, char *argv[])
 {
 
-
     srand(time(NULL));
 
-
-
-
     // if error
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+    {
         cout << "error initializing SDL: " << SDL_GetError() << '\n';
     }
-    if (TTF_Init() != 0) {
+    if (TTF_Init() != 0)
+    {
         cout << "error initializing SDL TTF Renderer: " << SDL_GetError() << '\n';
     }
 
-
-
-
     // make window
-    SDL_Window* win = SDL_CreateWindow("Most Monterey", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
+    SDL_Window *win = SDL_CreateWindow("Most Monterey", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
     updateScale(win);
-    
-
-
 
     // make renderer
-    SDL_Renderer* rend = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
+    SDL_Renderer *rend = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
 
-
-
-
-
-    TTF_Font* font = TTF_OpenFont("./fonts/Tiny5-Regular.ttf", 64);
-    TTF_Font* titleFont = TTF_OpenFont("./fonts/pixel-comic-sans.ttf", 96);
-    SDL_Surface* scoredisp;
-    SDL_Texture* textture;
+    TTF_Font *font = TTF_OpenFont("./fonts/Tiny5-Regular.ttf", 64);
+    TTF_Font *titleFont = TTF_OpenFont("./fonts/pixel-comic-sans.ttf", 96);
+    SDL_Surface *scoredisp;
+    SDL_Texture *textture;
     SDL_Rect scorebox;
 
-
-
-
-
     // read image
-    SDL_Surface* moeImg = SDL_LoadBMP("./sprites/moe.bmp");
-    SDL_Surface* cheeseImg = SDL_LoadBMP("./sprites/cheese.bmp");
-    SDL_Surface* bulletImg = SDL_LoadBMP("./sprites/piperbullet.bmp");
-    SDL_Surface* cloudImg = SDL_LoadBMP("./sprites/cloud.bmp");
+    SDL_Surface *moeImg = SDL_LoadBMP("./sprites/moe.bmp");
+    SDL_Surface *cheeseImg = SDL_LoadBMP("./sprites/cheese.bmp");
+    SDL_Surface *bulletImg = SDL_LoadBMP("./sprites/piperbullet.bmp");
+    SDL_Surface *cloudImg = SDL_LoadBMP("./sprites/cloud.bmp");
 
     SDL_Surface *cursurface = SDL_LoadBMP("./sprites/cheeseCursor.bmp");
-    
 
     // custom cursor
     SDL_Cursor *cursor = SDL_CreateColorCursor(cursurface, 0, 0);
@@ -106,22 +77,18 @@ int main(int argc, char *argv[])
     SDL_GetGlobalMouseState(&mouseX, &mouseY);
 
     SDL_Surface *actualMouse = SDL_LoadBMP("./sprites/mouse.bmp");
-    
+
     SDL_Cursor *actualCursor = SDL_CreateColorCursor(actualMouse, 0, 0);
     SDL_SetCursor(actualCursor);
 
-
     // turn it into a texture
-    SDL_Texture* moeTexture = SDL_CreateTextureFromSurface(rend, moeImg);
-    SDL_Texture* cheeseTexture = SDL_CreateTextureFromSurface(rend, cheeseImg);
-    SDL_Texture* bulletTexture = SDL_CreateTextureFromSurface(rend, bulletImg);
-    SDL_Texture* cloudTexture = SDL_CreateTextureFromSurface(rend, cloudImg);
+    SDL_Texture *moeTexture = SDL_CreateTextureFromSurface(rend, moeImg);
+    SDL_Texture *cheeseTexture = SDL_CreateTextureFromSurface(rend, cheeseImg);
+    SDL_Texture *bulletTexture = SDL_CreateTextureFromSurface(rend, bulletImg);
+    SDL_Texture *cloudTexture = SDL_CreateTextureFromSurface(rend, cloudImg);
 
-    SDL_Texture* cursorTexture = SDL_CreateTextureFromSurface(rend, cursurface);
+    SDL_Texture *cursorTexture = SDL_CreateTextureFromSurface(rend, cursurface);
     SDL_Rect mcursor;
-    
-
-
 
     // setup player rectangle
     SDL_Rect moe;
@@ -134,39 +101,41 @@ int main(int argc, char *argv[])
 
     int moey = moe.y;
 
-
     // big vars
-    bool running { true };
-    bool FULLSCREEN { false };
+    bool running{true};
+    bool FULLSCREEN{false};
+
+    list<list<double>> clouds{};
+    int cloudTick{0};
 
     cout << "game started omg" << '\n';
 
     // full app loop
-    while (running) {
-
+    while (running)
+    {
 
         // reset necessary vars
-        bool gameloop { true };
-        bool spacing { false };
-        bool canSpace { true };
+        bool gameloop{true};
+        bool spacing{false};
+        bool canSpace{true};
 
-        bool menu { true };
-        bool gameover { false };
-        int select { 0 };
+        bool menu{true};
+        bool gameover{false};
+        int select{0};
 
-        int distanceRan { 0 };
-        float pvel { 0 };
+        int distanceRan{0};
+        float pvel{0};
 
-        int score { 0 };
-        double scorey { 0 };
+        int score{0};
+        double scorey{0};
 
-        list<int> cheeses {};
-        list<int> bullets {};
-
+        list<int> cheeses{};
+        list<int> bullets{};
 
         // main game loop
-        while (gameloop) {
-            bool enter { false };
+        while (gameloop)
+        {
+            bool enter{false};
 
             // scale everything to be responsive
             updateScale(win);
@@ -181,49 +150,52 @@ int main(int argc, char *argv[])
             TTF_SetFontSize(font, 64 * SCALE / 6);
             TTF_SetFontSize(titleFont, 96 * SCALE / 6);
 
-
-
-
             SDL_Event event;
 
             // loop through any pending events/inputs
-            while (SDL_PollEvent(&event)) {
-                switch (event.type) {
-                    case SDL_QUIT:
-                        running = false;
-                        gameloop = false;
-                        break;
-                    case SDL_KEYDOWN:
-                        switch (event.key.keysym.scancode) {
-                            case SDL_SCANCODE_SPACE:
-                                if (event.key.repeat) {
-                                    spacing = false;
-                                    break;
-                                } else {
-                                    enter = true;
-                                }
-                                spacing = true;
-                                break;
-                            case SDL_SCANCODE_UP:
-                                select--;
-                                cout << "select up" << '\n';
-                                break;
-                            case SDL_SCANCODE_DOWN:
-                                select++;
-                                cout << "select down" << '\n';
-                                break;
-                            default:
-                                break;
-                        }
-                        break;
-                    case SDL_KEYUP:
-                        case SDL_SCANCODE_SPACE:
+            while (SDL_PollEvent(&event))
+            {
+                switch (event.type)
+                {
+                case SDL_QUIT:
+                    running = false;
+                    gameloop = false;
+                    break;
+                case SDL_KEYDOWN:
+                    switch (event.key.keysym.scancode)
+                    {
+                    case SDL_SCANCODE_SPACE:
+                        if (event.key.repeat)
+                        {
                             spacing = false;
                             break;
+                        }
+                        else
+                        {
+                            enter = true;
+                        }
+                        spacing = true;
                         break;
-                    case SDL_MOUSEMOTION:
-                        SDL_GetGlobalMouseState(&mouseX, &mouseY);
+                    case SDL_SCANCODE_UP:
+                        select--;
+                        cout << "select up" << '\n';
                         break;
+                    case SDL_SCANCODE_DOWN:
+                        select++;
+                        cout << "select down" << '\n';
+                        break;
+                    default:
+                        break;
+                    }
+                    break;
+                case SDL_KEYUP:
+                case SDL_SCANCODE_SPACE:
+                    spacing = false;
+                    break;
+                    break;
+                case SDL_MOUSEMOTION:
+                    SDL_GetGlobalMouseState(&mouseX, &mouseY);
+                    break;
                 }
             }
             int winx;
@@ -231,19 +203,38 @@ int main(int argc, char *argv[])
             SDL_GetWindowPosition(win, &winx, &winy);
             mcursor.x = mouseX - winx;
             mcursor.y = mouseY - winy;
-            if (menu) {
+
+            if ((int)(cloudTick / (SPEED * SCALE / 6)) % 25 == 0)
+            {
+                double multiplier = (double)(rand() % 100) / 100 + 0.5;
+                clouds.push_back({
+
+                    (double)(cloudTick * multiplier + WIDTH), // x value
+                    (double)(rand() % (HEIGHT)),              // y value
+                    multiplier                                // size multiplier
+
+                });
+            }
+            cloudTick += SPEED * SCALE / 6;
+
+            if (menu)
+            {
                 SDL_SetRenderDrawColor(rend, 83, 178, 237, 255);
                 SDL_RenderClear(rend);
 
-                if (select > 2) {
+                renderClouds(rend, cloudTexture, clouds, cloudTick);
+
+                if (select > 2)
+                {
                     select = 0;
-                } else if (select < 0) {
+                }
+                else if (select < 0)
+                {
                     select = 2;
                 }
-                
 
-                SDL_Color black = {0,0,0};
-                SDL_Color white = {255,255,255};
+                SDL_Color black = {0, 0, 0};
+                SDL_Color white = {255, 255, 255};
                 SDL_Color yellow = {252, 194, 3};
                 scoredisp = TTF_RenderText_Solid(titleFont, "Most Monterey", yellow);
                 textture = SDL_CreateTextureFromSurface(rend, scoredisp);
@@ -278,54 +269,56 @@ int main(int argc, char *argv[])
                 textbox.h = scoredisp->h;
                 SDL_RenderCopy(rend, textture, NULL, &textbox);
 
-
                 // control menu options
-                if (enter) {
-                    switch (select) {
-                        case 0:
-                            menu = false;
-                            spacing = false;
-                            break;
-                        case 1:
-                            FULLSCREEN = !FULLSCREEN;
-                            FULLSCREEN ? SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN_DESKTOP) : SDL_SetWindowFullscreen(win, 0);
-                            break;
-                        case 2:
-                            running = false;
-                            gameloop = false;
-                            break;
+                if (enter)
+                {
+                    switch (select)
+                    {
+                    case 0:
+                        menu = false;
+                        spacing = false;
+                        clouds = {};
+                        break;
+                    case 1:
+                        FULLSCREEN = !FULLSCREEN;
+                        FULLSCREEN ? SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN_DESKTOP) : SDL_SetWindowFullscreen(win, 0);
+                        break;
+                    case 2:
+                        running = false;
+                        gameloop = false;
+                        break;
                     }
                 }
-            } else if (gameover) {
+            }
+            else if (gameover)
+            {
+
                 int endScoreX = 16 * sin(milliTime() / 100.0);
                 int endScoreY = 16 * cos(milliTime() / 170.0);
                 int outline = 16.0 * SCALE / 6.0;
                 SDL_SetRenderDrawColor(rend, 83, 178, 237, 255);
                 SDL_RenderClear(rend);
 
+                renderClouds(rend, cloudTexture, clouds, cloudTick);
+
                 SDL_Rect ground;
                 ground.x = 0;
                 ground.y = HEIGHT / 2 + (15 * SCALE);
                 ground.w = WIDTH;
                 ground.h = HEIGHT / 2;
-                SDL_SetRenderDrawColor(rend, 0, 0, 0, 255 );
+                SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
                 SDL_RenderFillRect(rend, &ground);
 
                 ground.x = 0;
                 ground.y = HEIGHT / 2 + (16 * SCALE);
                 ground.w = WIDTH;
                 ground.h = HEIGHT / 2;
-                SDL_SetRenderDrawColor(rend, 44, 199, 54, 255 );
+                SDL_SetRenderDrawColor(rend, 44, 199, 54, 255);
                 SDL_RenderFillRect(rend, &ground);
 
-                SDL_Color white = {255,255,255};
+                SDL_Color white = {255, 255, 255};
                 SDL_Color yellow = {252, 194, 3};
                 SDL_Color black = {0, 0, 0};
-
-
-
-
-
 
                 // score text outline
                 scoredisp = TTF_RenderText_Solid(titleFont, to_string(score).c_str(), black);
@@ -337,7 +330,6 @@ int main(int argc, char *argv[])
                 textbox.h = scoredisp->h;
                 SDL_RenderCopy(rend, textture, NULL, &textbox);
 
-
                 scoredisp = TTF_RenderText_Solid(titleFont, to_string(score).c_str(), black);
                 textture = SDL_CreateTextureFromSurface(rend, scoredisp);
                 textbox.x = (WIDTH + outline) / 2 - scoredisp->w / 2 + endScoreX;
@@ -345,7 +337,6 @@ int main(int argc, char *argv[])
                 textbox.w = scoredisp->w;
                 textbox.h = scoredisp->h;
                 SDL_RenderCopy(rend, textture, NULL, &textbox);
-
 
                 scoredisp = TTF_RenderText_Solid(titleFont, to_string(score).c_str(), black);
                 textture = SDL_CreateTextureFromSurface(rend, scoredisp);
@@ -355,7 +346,6 @@ int main(int argc, char *argv[])
                 textbox.h = scoredisp->h;
                 SDL_RenderCopy(rend, textture, NULL, &textbox);
 
-
                 scoredisp = TTF_RenderText_Solid(titleFont, to_string(score).c_str(), black);
                 textture = SDL_CreateTextureFromSurface(rend, scoredisp);
                 textbox.x = WIDTH / 2 - scoredisp->w / 2 + endScoreX;
@@ -363,12 +353,6 @@ int main(int argc, char *argv[])
                 textbox.w = scoredisp->w;
                 textbox.h = scoredisp->h;
                 SDL_RenderCopy(rend, textture, NULL, &textbox);
-
-
-
-
-
-
 
                 // score text fill
                 scoredisp = TTF_RenderText_Solid(titleFont, to_string(score).c_str(), yellow);
@@ -379,11 +363,6 @@ int main(int argc, char *argv[])
                 textbox.h = scoredisp->h;
                 SDL_RenderCopy(rend, textture, NULL, &textbox);
 
-
-
-
-
-
                 // continue message
                 scoredisp = (time(NULL) % 2) ? TTF_RenderText_Solid(font, "> SPACE TO CONTINUE <", white) : TTF_RenderText_Solid(font, "SPACE TO CONTINUE", white);
                 textture = SDL_CreateTextureFromSurface(rend, scoredisp);
@@ -393,35 +372,48 @@ int main(int argc, char *argv[])
                 textbox.y = HEIGHT - textbox.h - 32;
                 SDL_RenderCopy(rend, textture, NULL, &textbox);
 
-                if (enter) {
+                if (enter)
+                {
                     gameloop = false;
                 }
-            } else {
-                if (spacing && moe.y == HEIGHT / 2) {
+            }
+            else
+            {
+                if (spacing && moe.y == HEIGHT / 2)
+                {
                     pvel = 10;
                 }
-                if (moe.y == HEIGHT / 2) {
+                if (moe.y == HEIGHT / 2)
+                {
                     moe.x = 50 + (SDL_sin(distanceRan / SPEED / 5) * 5);
-                } else {
+                }
+                else
+                {
                     moe.x = 50;
                 }
                 pvel -= 0.4;
                 moey += pvel;
                 moey = __max(moey, 0);
-                moe.y = (HEIGHT / 2) - (moey * ((double) SCALE / 6.0));
+                moe.y = (HEIGHT / 2) - (moey * ((double)SCALE / 6.0));
                 moe.y = __min(moe.y, HEIGHT / 2);
-                for (int x : bullets) {
-                    if (x - distanceRan * 1.2 < moe.x + moe.w && x - distanceRan * 1.2 + (64 * (SCALE / 6)) > moe.x && moe.y > HEIGHT / 2 - (64 * (SCALE / 6))) {
+                for (int x : bullets)
+                {
+                    if (x - distanceRan * 1.2 < moe.x + moe.w && x - distanceRan * 1.2 + (64 * (SCALE / 6)) > moe.x && moe.y > HEIGHT / 2 - (64 * (SCALE / 6)))
+                    {
                         cout << "die" << '\n';
                         gameover = true;
                     }
                 }
-                for (int x : cheeses) {
-                    if (x - distanceRan < moe.x + (64 * (SCALE / 6)) && x - distanceRan > moe.x && moe.y > HEIGHT / 2 - (64 * (SCALE / 6))) {
+                for (int x : cheeses)
+                {
+                    if (x - distanceRan < moe.x + (64 * (SCALE / 6)) && x - distanceRan > moe.x && moe.y > HEIGHT / 2 - (64 * (SCALE / 6)))
+                    {
                         cout << "cheese" << '\n';
-                        list<int> temp {};
-                        for (int i : cheeses) {
-                            if (i != x) {
+                        list<int> temp{};
+                        for (int i : cheeses)
+                        {
+                            if (i != x)
+                            {
                                 temp.push_back(i);
                             }
                         }
@@ -432,37 +424,39 @@ int main(int argc, char *argv[])
                 }
                 distanceRan += SPEED * SCALE / 6;
 
-                if ((int)(distanceRan / (SPEED * SCALE / 6)) % 50 == 0) {
-                    if ((rand() % 2) + 1 == 1) {
+                if ((int)(distanceRan / (SPEED * SCALE / 6)) % 50 == 0)
+                {
+                    if ((rand() % 2) + 1 == 1)
+                    {
                         cheeses.push_back(distanceRan + (WIDTH));
-                        //cheeses.push_back((rand() % 2) * 64);
-                        cout << "new cheese" << '\n';
-                    } else {
+                    }
+                    else
+                    {
                         bullets.push_back(distanceRan * 1.2 + (WIDTH));
-                        //bullets.push_back((rand() % 2) * 64);
-                        cout << "new bullet" << '\n';
                     }
                 }
-                
+
                 SDL_SetRenderDrawColor(rend, 83, 178, 237, 255);
                 SDL_RenderClear(rend);
+
+                renderClouds(rend, cloudTexture, clouds, cloudTick);
 
                 SDL_Rect ground;
                 ground.x = 0;
                 ground.y = HEIGHT / 2 + (15 * SCALE);
                 ground.w = WIDTH;
                 ground.h = HEIGHT / 2;
-                SDL_SetRenderDrawColor(rend, 0, 0, 0, 255 );
+                SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
                 SDL_RenderFillRect(rend, &ground);
 
                 ground.x = 0;
                 ground.y = HEIGHT / 2 + (16 * SCALE);
                 ground.w = WIDTH;
                 ground.h = HEIGHT / 2;
-                SDL_SetRenderDrawColor(rend, 44, 199, 54, 255 );
+                SDL_SetRenderDrawColor(rend, 44, 199, 54, 255);
                 SDL_RenderFillRect(rend, &ground);
 
-                SDL_Color black = {(uint8_t)std::round(255 * (scorey/32)),(uint8_t)std::round(255 * (scorey/32)),(uint8_t)std::round(255 * (scorey/32))};
+                SDL_Color black = {(uint8_t)std::round(255 * (scorey / 32)), (uint8_t)std::round(255 * (scorey / 32)), (uint8_t)std::round(255 * (scorey / 32))};
                 scoredisp = TTF_RenderText_Solid(font, std::to_string(score).c_str(), black);
                 textture = SDL_CreateTextureFromSurface(rend, scoredisp);
                 scorey += (0 - scorey) / 20;
@@ -474,6 +468,7 @@ int main(int argc, char *argv[])
                 SDL_RenderCopy(rend, moeTexture, NULL, &moe);
                 renderCheese(rend, cheeseTexture, cheeses, distanceRan);
                 renderBullet(rend, bulletTexture, bullets, distanceRan);
+
                 SDL_RenderCopy(rend, textture, NULL, &scorebox);
             }
             SDL_RenderCopy(rend, cursorTexture, NULL, &mcursor);
@@ -481,50 +476,92 @@ int main(int argc, char *argv[])
             SDL_Delay(1000 / 60);
         }
     }
- 
+
     SDL_DestroyRenderer(rend);
     SDL_DestroyWindow(win);
     SDL_Quit();
     return 0;
 }
 
-int renderCheese(SDL_Renderer* rend, SDL_Texture* tex, list<int> &cheeses, int distanceRan) {
+int renderCheese(SDL_Renderer *rend, SDL_Texture *tex, list<int> &cheeses, int distanceRan)
+{
     SDL_Rect cheese;
     SDL_QueryTexture(tex, NULL, NULL, &cheese.w, &cheese.h);
     cheese.w *= SCALE;
     cheese.h *= SCALE;
-    for (int i = 0; i < sizeof(cheeses); i++) {
+    for (int i = 0; i < sizeof(cheeses); i++)
+    {
         int x = get(cheeses, i);
-        if (x == INT_MIN) continue;
-        cheese.y = HEIGHT / 2  + (SDL_sin((x - distanceRan) / SPEED / 10) * 10);
+        if (x == INT_MIN)
+            continue;
+        cheese.y = HEIGHT / 2 + (SDL_sin((x - distanceRan) / SPEED / 10) * 10);
         cheese.x = x - distanceRan;
         SDL_RenderCopy(rend, tex, NULL, &cheese);
     }
     return 0;
 }
 
-int renderBullet(SDL_Renderer* rend, SDL_Texture* tex, list<int> &bullets, int distanceRan) {
+int renderBullet(SDL_Renderer *rend, SDL_Texture *tex, list<int> &bullets, int distanceRan)
+{
     SDL_Rect bullet;
     SDL_QueryTexture(tex, NULL, NULL, &bullet.w, &bullet.h);
     bullet.w *= SCALE;
     bullet.h *= SCALE;
-    for (int x : bullets) {
-        bullet.y = HEIGHT / 2  + (SDL_sin((x - distanceRan) / SPEED) * 4);
+    for (int x : bullets)
+    {
+        bullet.y = HEIGHT / 2 + (SDL_sin((x - distanceRan) / SPEED) * 4);
         bullet.x = x - distanceRan * 1.2 + (SDL_sin(((x - distanceRan) * 1.14159265) / SPEED) * 2);
         SDL_RenderCopy(rend, tex, NULL, &bullet);
     }
     return 0;
 }
 
-// int renderClouds(SDL_Renderer* rend, SDL_Texture* tex, list<list<double>> &clouds, int distanceRan) {
+int renderClouds(SDL_Renderer *rend, SDL_Texture *tex, list<list<double>> &clouds, int tick)
+{
+    SDL_Rect cloudRect;
 
-// }
-int get(list<int> &data, int index) {
+    for (list<double> cloud : clouds)
+    {
+        double x = getdbl(cloud, 0);
+        double y = getdbl(cloud, 1);
+        double mult = getdbl(cloud, 2);
+        SDL_Texture *texCopy = tex;
+
+        SDL_QueryTexture(texCopy, NULL, NULL, &cloudRect.w, &cloudRect.h);
+        cloudRect.w *= SCALE * mult * 6;
+        cloudRect.h *= SCALE * mult;
+        cloudRect.y = y;
+        cloudRect.x = x - tick * mult;
+        SDL_SetTextureAlphaMod(texCopy, 255 * ((mult - 0.5) / 2 + 0.25));
+        SDL_RenderCopy(rend, texCopy, NULL, &cloudRect);
+    }
+    return 0;
+}
+
+int get(list<int> &data, int index)
+{
     list<int>::iterator i;
     i = data.begin();
     int n = 0;
-    for (i = data.begin(); i != data.end(); ++i) {
-        if (n == index) {
+    for (i = data.begin(); i != data.end(); ++i)
+    {
+        if (n == index)
+        {
+            return *i;
+        }
+        n++;
+    }
+    return INT_MIN;
+}
+double getdbl(list<double> &data, int index)
+{                             // its the same get function
+    list<double>::iterator i; // but for lists of doubles
+    i = data.begin();         // instead of ints
+    int n = 0;
+    for (i = data.begin(); i != data.end(); ++i)
+    {
+        if (n == index)
+        {
             return *i;
         }
         n++;
@@ -532,12 +569,14 @@ int get(list<int> &data, int index) {
     return INT_MIN;
 }
 
-void updateScale(SDL_Window* win) {
+void updateScale(SDL_Window *win)
+{
     SDL_GetWindowSize(win, &WIDTH, &HEIGHT);
-    SCALE = ((double) WIDTH / (1920.0 / 2)) * 6;
+    SCALE = ((double)WIDTH / (1920.0 / 2)) * 6;
 }
 
-uint64_t milliTime() {
-  using namespace std::chrono;
-  return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+uint64_t milliTime()
+{
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 }
